@@ -9,3 +9,5 @@ fibo:
   maxWorkerBits: 3
   maxIdcBits: 3
   nameSpaces: order,uc
+  # 0, don't output, 1 output without body, 2 output with body
+  logLevel: 0

@@ -3,7 +3,7 @@ package fibo
 import (
 	"errors"
 	"github.com/go-zookeeper/zk"
-	"log"
+	"github.com/rolandhe/fibo/logger"
 	"strconv"
 	"time"
 )
@@ -18,7 +18,7 @@ func reconnect(conf *zookeeperConf, g *Generator) {
 			break
 		}
 		time.Sleep(time.Millisecond * 1000)
-		log.Printf("init workerId failed,try again")
+		logger.GLogger.Infoln("init workerId failed,try again")
 	}
 }
 
@@ -32,7 +32,7 @@ func initWorkerCore(conf *zookeeperConf, g *Generator) error {
 
 	conn, eventCh, err := zk.Connect(conf.servers, conf.sessionTimeout)
 	if err != nil {
-		log.Println(err)
+		logger.GLogger.Infoln(err)
 		return err
 	}
 
@@ -42,19 +42,20 @@ func initWorkerCore(conf *zookeeperConf, g *Generator) error {
 	}
 	g.SetWorkerId(workerId)
 	g.SetState(true)
-	log.Printf("init worker id is %d\n", workerId)
+	logger.GLogger.Infof("init worker id is %d\n", workerId)
 	go func() {
 		for {
 			select {
 			case event := <-eventCh:
 				if event.State == zk.StateDisconnected {
+					logger.GLogger.Infoln("waring: connect is disconnect, next to reconnect")
 					conn.Close()
 					reconnect(conf, g)
 					return
 				}
-				log.Println(event)
+				logger.GLogger.Infoln(event)
 			case <-time.After(time.Minute):
-				log.Println("can't get event, wait minute")
+				logger.GLogger.Infoln("can't get event, wait minute")
 			}
 		}
 	}()
@@ -76,7 +77,7 @@ func getWorkerId(conn *zk.Conn, conf *zookeeperConf) (int32, error) {
 	locker := zk.NewLock(conn, "/fibo/lock", zk.WorldACL(zk.PermAll))
 	err = locker.Lock()
 	if err != nil {
-		log.Println(err)
+		logger.GLogger.Infoln(err)
 		conn.Close()
 		return 0, err
 	}
@@ -91,7 +92,7 @@ func getWorkerId(conn *zk.Conn, conf *zookeeperConf) (int32, error) {
 	}
 
 	if len(existsWorkers) >= int(maxWorkers) {
-		log.Println("workers enough")
+		logger.GLogger.Infoln("workers enough")
 		conn.Close()
 		return 0, errors.New("workers enough")
 	}
@@ -130,7 +131,7 @@ func repeat(existIds []int32, workerId int32) bool {
 func parseIdByName(name string, maxWorkers int32) int32 {
 	l := len(workerPath)
 	if l > len(name) {
-		log.Println("error", name)
+		logger.GLogger.Infoln("error", name)
 		panic(name)
 	}
 	number := name[l:]
@@ -141,7 +142,7 @@ func parseIdByName(name string, maxWorkers int32) int32 {
 func ensureNode(conn *zk.Conn, path string) error {
 	_, stat, err := conn.Get(path)
 	if err == nil {
-		log.Println(path, stat.Czxid)
+		logger.GLogger.Infoln(path, stat.Czxid)
 		return nil
 	}
 	if err != nil && err != zk.ErrNoNode {
@@ -150,11 +151,11 @@ func ensureNode(conn *zk.Conn, path string) error {
 
 	name, err := conn.Create(path, nil, 0, zk.WorldACL(zk.PermAll))
 	if err == zk.ErrNodeExists {
-		log.Println(err)
+		logger.GLogger.Infoln(err)
 		return nil
 	}
 	if err == nil {
-		log.Println(name)
+		logger.GLogger.Infoln(name)
 	}
 
 	return err

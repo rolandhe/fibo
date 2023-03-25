@@ -2,6 +2,7 @@ package fibo
 
 import (
 	"errors"
+	"github.com/rolandhe/fibo/logger"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -35,6 +36,7 @@ func NewGenerator() *Generator {
 		workerIdBits: conf.maxWorkerBits,
 		idcBits:      conf.maxIdcBits,
 		NameSpaces:   nsMap,
+		conf:         conf,
 	}
 }
 
@@ -51,6 +53,8 @@ type Generator struct {
 	idcBits      int
 
 	NameSpaces map[string]*NameSpace
+
+	conf *configure
 }
 
 type NameSpace struct {
@@ -92,6 +96,7 @@ func (g *Generator) GenOneId(name string) (int64, error) {
 	sleep := (nameSpace.timeStamp+1)*nanoOfMs - nano
 	nameSpace.nextId = 0
 	if sleep > 0 {
+		logger.GLogger.Infof("get one id, need to sleep:%d", sleep)
 		time.Sleep(time.Duration(sleep))
 		nameSpace.timeStamp++
 	} else {
@@ -142,6 +147,7 @@ func (g *Generator) GenBatchId(name string, batch int64) ([]*BatchIds, error) {
 	sleep := (nameSpace.timeStamp+waitMs)*nanoOfMs - time.Now().UnixNano()
 	nameSpace.nextId = 0
 	if sleep > 0 {
+		logger.GLogger.Infof("get batch id, need to sleep:%d", sleep)
 		time.Sleep(time.Duration(sleep))
 	}
 

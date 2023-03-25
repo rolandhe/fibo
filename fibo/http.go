@@ -3,13 +3,23 @@ package fibo
 import (
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rolandhe/fibo/logger"
 	"net/http"
+	"reflect"
 	"strconv"
+	"time"
+	"unsafe"
 )
 
 const (
 	okStatus  = 200
 	errStatus = 500
+)
+
+const (
+	httpLogNone        = 0
+	httpLogWithoutBody = 1
+	httpLogWithBody    = 2
 )
 
 type ResultOne struct {
@@ -26,6 +36,13 @@ type ResultBatch struct {
 
 func HttpService(gen *Generator) func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		logLevel := gen.conf.logLevel
+		var startTime int64
+		url := request.URL.String()
+		if logLevel > httpLogNone {
+			startTime = time.Now().UnixNano()
+			logger.GLogger.Infof("enter %s", url)
+		}
 		ns := params.ByName("nameSpace")
 		if ns == "" || ns == "/" {
 			ns = DefaultNamespace
@@ -39,13 +56,23 @@ func HttpService(gen *Generator) func(writer http.ResponseWriter, request *http.
 			ret.Id = id
 			ret.Code = okStatus
 		}
-		json, _ := json.Marshal(&ret)
-		outputResult(writer, json)
+		jsonValue, _ := json.Marshal(&ret)
+
+		outputResult(writer, jsonValue)
+		loggerFinal(logLevel, url, startTime, jsonValue)
 	}
 }
 
 func HttpBatchService(gen *Generator) func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		logLevel := gen.conf.logLevel
+		var startTime int64
+		url := request.URL.String()
+		if logLevel > httpLogNone {
+			startTime = time.Now().UnixNano()
+			logger.GLogger.Infof("enter %s", url)
+		}
+
 		ns := params.ByName("nameSpace")
 		if ns == "" || ns == "/" {
 			ns = DefaultNamespace
@@ -53,36 +80,49 @@ func HttpBatchService(gen *Generator) func(writer http.ResponseWriter, request *
 		queryValues := request.URL.Query()
 		batchVale := queryValues["batch"]
 		if len(batchVale) == 0 {
-			outputBatchResult(writer, buildBatchErr("no batch query value"))
+			loggerFinal(logLevel, url, startTime, outputBatchResult(writer, buildBatchErr("no batch query value")))
 			return
 		}
 
 		batch, err := strconv.Atoi(batchVale[0])
 		if err != nil {
-			outputBatchResult(writer, buildBatchErr("invalid batch query value"))
+			loggerFinal(logLevel, url, startTime, outputBatchResult(writer, buildBatchErr("invalid batch query value")))
 			return
 		}
 		batchIds, err := gen.GenBatchId(ns, int64(batch))
 		if err != nil {
-			outputBatchResult(writer, buildBatchErr(err.Error()))
+			loggerFinal(logLevel, url, startTime, outputBatchResult(writer, buildBatchErr(err.Error())))
 			return
 		}
 		r := &ResultBatch{
 			Code:     okStatus,
 			BatchIds: batchIds,
 		}
-		outputBatchResult(writer, r)
+		loggerFinal(logLevel, url, startTime, outputBatchResult(writer, r))
 	}
 }
 
-func outputBatchResult(writer http.ResponseWriter, r *ResultBatch) {
-	json, _ := json.Marshal(r)
-	outputResult(writer, json)
+func loggerFinal(logLevel int, url string, startTime int64, jsonValue []byte) {
+	if logLevel == httpLogNone {
+		return
+	}
+	cost := time.Now().UnixNano() - startTime
+	body := ""
+	if logLevel == httpLogWithBody {
+		body = attachBytesString(jsonValue)
+	}
+	logger.GLogger.Infof("leave %s,cost:%d ns,body:%s", url, cost, body)
 }
 
-func outputResult(writer http.ResponseWriter, json []byte) {
-	writer.Header().Set("Content-Type", "application/json")
-	writer.Write(json)
+func outputBatchResult(writer http.ResponseWriter, r *ResultBatch) []byte {
+	jsonValue, _ := json.Marshal(r)
+	outputResult(writer, jsonValue)
+	return jsonValue
+}
+
+func outputResult(writer http.ResponseWriter, jsonValue []byte) {
+	writer.Header().Set("Content-Type", "application/jsonValue")
+	writer.Write(jsonValue)
 }
 
 func buildBatchErr(errMsg string) *ResultBatch {
@@ -90,4 +130,11 @@ func buildBatchErr(errMsg string) *ResultBatch {
 		Code:       errStatus,
 		ErrMessage: errMsg,
 	}
+}
+
+func attachBytesString(b []byte) string {
+	sl := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	sh := &reflect.StringHeader{Data: sl.Data, Len: sl.Len}
+
+	return *(*string)(unsafe.Pointer(sh))
 }

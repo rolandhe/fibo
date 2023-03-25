@@ -2,8 +2,8 @@ package fibo
 
 import (
 	"fmt"
+	"github.com/rolandhe/fibo/logger"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -19,16 +19,16 @@ func init() {
 		confFile = fmt.Sprintf("./conf/app-%s.yaml", profile)
 	}
 
-	log.Printf("use profile:%s, conf: %s\n", profile, confFile)
+	logger.GLogger.Infof("use profile:%s, conf: %s\n", profile, confFile)
 
 	buff, err := os.ReadFile(confFile)
 	if err != nil {
-		log.Println(err)
+		logger.GLogger.Infoln(err)
 		return
 	}
 
 	if err := yaml.Unmarshal(buff, &appConf); err != nil {
-		log.Println(err)
+		logger.GLogger.Infoln(err)
 		return
 	}
 }
@@ -49,6 +49,7 @@ type configure struct {
 	maxWorkerBits int
 	maxIdcBits    int
 	nameSpaces    []string
+	logLevel      int
 }
 
 func GetAppInfo() *AppInfo {
@@ -96,6 +97,7 @@ func getFiboConfigure() *configure {
 		maxWorkerBits: getFromMapInt(mp, "maxWorkerBits"),
 		maxIdcBits:    getFromMapInt(mp, "maxIdcBits"),
 		nameSpaces:    nameSpaces,
+		logLevel:      getFromMapInt(mp, "logLevel"),
 	}
 }
 
