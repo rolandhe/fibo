@@ -24,14 +24,14 @@ const (
 
 type ResultOne struct {
 	Code       int    `json:"code"`
-	ErrMessage string `json:"errMessage"`
-	Id         int64  `json:"id"`
+	ErrMessage string `json:"errMessage,omitempty"`
+	Id         int64  `json:"id,omitempty"`
 }
 
 type ResultBatch struct {
-	Code       int    `json:"code"`
-	ErrMessage string `json:"errMessage"`
-	BatchIds   []*BatchIds
+	Code       int         `json:"code"`
+	ErrMessage string      `json:"errMessage,omitempty"`
+	BatchIds   []*BatchIds `json:"batchIds,omitempty"`
 }
 
 func HttpService(gen *Generator) func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
