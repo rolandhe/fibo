@@ -7,14 +7,19 @@ import (
 	"time"
 )
 
-const maxIncrId = 4095
-const MaxBatchSize = 8192
-const IncrIdBits = 12
+const (
+	maxIncrId    = 4095
+	MaxBatchSize = 8192
+	IncrIdBits   = 12
+	nanoOfMs     = 1000000
+)
 
-var err500 = errors.New("internal error")
-var errNoNs = errors.New("invalid id namespace")
-var errExceedBatch = errors.New("exceed max batch size")
-var errBatchSize = errors.New("invalid batch size")
+var (
+	err500         = errors.New("internal error")
+	errNoNs        = errors.New("invalid id namespace")
+	errExceedBatch = errors.New("exceed max batch size")
+	errBatchSize   = errors.New("invalid batch size")
+)
 
 func NewGenerator() *Generator {
 	conf := getConfigure()
@@ -74,19 +79,19 @@ func (g *Generator) GenOneId(name string) (int64, error) {
 		nameSpace.timeStamp = curTime
 		nameSpace.nextId = 0
 	}
-	if nameSpace.nextId < maxIncrId {
+	if nameSpace.nextId <= maxIncrId {
 		id := g.composeId(nameSpace, nameSpace.nextId)
 		nameSpace.nextId++
 		return id, nil
 	}
 	nano := time.Now().UnixNano()
-	sleep := (nameSpace.timeStamp+1)*1000000 - nano
+	sleep := (nameSpace.timeStamp+1)*nanoOfMs - nano
 	nameSpace.nextId = 0
 	if sleep > 0 {
 		time.Sleep(time.Duration(sleep))
 		nameSpace.timeStamp++
 	} else {
-		nameSpace.timeStamp = nano / 1000000
+		nameSpace.timeStamp = nano / nanoOfMs
 	}
 
 	id := g.composeId(nameSpace, nameSpace.nextId)
@@ -101,15 +106,7 @@ func (g *Generator) GenBatchId(name string, batch int64) ([]*BatchIds, error) {
 	if batch > MaxBatchSize {
 		return nil, errExceedBatch
 	}
-	var ret []*BatchIds
-	if batch == 1 {
-		id, err := g.GenOneId(name)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, &BatchIds{id, id})
-		return ret, nil
-	}
+
 	if !g.state.Load() {
 		return nil, err500
 	}
@@ -119,6 +116,7 @@ func (g *Generator) GenBatchId(name string, batch int64) ([]*BatchIds, error) {
 	}
 	nameSpace.Lock()
 	defer nameSpace.Unlock()
+	var ret []*BatchIds
 	curTime := time.Now().UnixMilli()
 	if curTime != nameSpace.timeStamp {
 		nameSpace.timeStamp = curTime
@@ -128,13 +126,16 @@ func (g *Generator) GenBatchId(name string, batch int64) ([]*BatchIds, error) {
 	if maxIncrId+1-nameSpace.nextId >= batch {
 		start := nameSpace.nextId
 		nameSpace.nextId += batch
-		ret = append(ret, &BatchIds{start, nameSpace.nextId - 1})
+		ret = append(ret, &BatchIds{g.composeId(nameSpace, start), g.composeId(nameSpace, nameSpace.nextId-1)})
 		return ret, nil
 	}
-	ret = append(ret, &BatchIds{g.composeId(nameSpace, nameSpace.nextId), g.composeId(nameSpace, maxIncrId)})
-	batch -= maxIncrId - nameSpace.nextId + 1
+	if maxIncrId >= nameSpace.nextId {
+		ret = append(ret, &BatchIds{g.composeId(nameSpace, nameSpace.nextId), g.composeId(nameSpace, maxIncrId)})
+		batch -= maxIncrId - nameSpace.nextId + 1
+	}
+
 	waitMs := (batch + maxIncrId) / (maxIncrId + 1)
-	sleep := (nameSpace.timeStamp+waitMs)*1000000 - time.Now().UnixNano()
+	sleep := (nameSpace.timeStamp+waitMs)*nanoOfMs - time.Now().UnixNano()
 	nameSpace.nextId = 0
 	if sleep > 0 {
 		time.Sleep(time.Duration(sleep))
@@ -145,6 +146,7 @@ func (g *Generator) GenBatchId(name string, batch int64) ([]*BatchIds, error) {
 		if batch >= maxIncrId+1 {
 			ret = append(ret, &BatchIds{g.composeId(nameSpace, 0), g.composeId(nameSpace, maxIncrId)})
 			batch -= maxIncrId + 1
+			nameSpace.nextId = maxIncrId + 1
 			continue
 		}
 		ret = append(ret, &BatchIds{g.composeId(nameSpace, 0), g.composeId(nameSpace, batch-1)})
