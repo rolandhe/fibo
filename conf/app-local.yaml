@@ -1,0 +1,11 @@
+app:
+  name: fiboApp
+  port: 8080
+zk:
+  servers: localhost:2181,localhost:2182,localhost:2183
+  sessionTimeout: 2
+
+fibo:
+  maxWorkerBits: 3
+  maxIdcBits: 3
+  nameSpaces: order,uc

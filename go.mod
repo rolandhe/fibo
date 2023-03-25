@@ -10,4 +10,5 @@ require (
 require (
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

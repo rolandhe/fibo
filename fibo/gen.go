@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	maxIncrId    = 4095
-	MaxBatchSize = 8192
-	IncrIdBits   = 12
-	nanoOfMs     = 1000000
+	maxIncrId        = 4095
+	MaxBatchSize     = 8192
+	IncrIdBits       = 12
+	nanoOfMs         = 1000000
+	DefaultNamespace = "default"
 )
 
 var (
@@ -22,8 +23,11 @@ var (
 )
 
 func NewGenerator() *Generator {
-	conf := getConfigure()
+	conf := getFiboConfigure()
 	nsMap := make(map[string]*NameSpace)
+	nsMap[DefaultNamespace] = &NameSpace{
+		Name: DefaultNamespace,
+	}
 	for _, ns := range conf.nameSpaces {
 		nsMap[ns] = &NameSpace{Name: ns}
 	}

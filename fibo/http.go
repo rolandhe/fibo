@@ -28,7 +28,7 @@ func HttpService(gen *Generator) func(writer http.ResponseWriter, request *http.
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		ns := params.ByName("nameSpace")
 		if ns == "" || ns == "/" {
-			ns = "default"
+			ns = DefaultNamespace
 		}
 		var ret ResultOne
 		id, err := gen.GenOneId(ns)
@@ -48,7 +48,7 @@ func HttpBatchService(gen *Generator) func(writer http.ResponseWriter, request *
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		ns := params.ByName("nameSpace")
 		if ns == "" || ns == "/" {
-			ns = "default"
+			ns = DefaultNamespace
 		}
 		queryValues := request.URL.Query()
 		batchVale := queryValues["batch"]

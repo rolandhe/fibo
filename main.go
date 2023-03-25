@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -26,13 +27,14 @@ func main() {
 
 	router.GET("/fibo/one/*nameSpace", fibo.HttpService(g))
 	router.GET("/fibo/batch/*nameSpace", fibo.HttpBatchService(g))
+	appInfo := fibo.GetAppInfo()
 	server := &http.Server{
-		Addr:        "0.0.0.0:8080",
+		Addr:        "0.0.0.0:" + strconv.Itoa(appInfo.Port),
 		Handler:     h2c.NewHandler(router, h2s),
 		IdleTimeout: time.Minute * 30,
 	}
 
-	fmt.Printf("Listening [0.0.0.0:8080]...\n")
+	fmt.Printf("App %s Listening [0.0.0.0:%d]...\n", appInfo.Name, appInfo.Port)
 	checkErr(server.ListenAndServe(), "while listening")
 }
 
