@@ -37,6 +37,7 @@ func NewGenerator() *Generator {
 		idcBits:      conf.maxIdcBits,
 		NameSpaces:   nsMap,
 		conf:         conf,
+		idcId:        getIdcId(),
 	}
 }
 
@@ -168,7 +169,9 @@ func (g *Generator) GenBatchId(name string, batch int64) ([]*BatchIds, error) {
 
 func (g *Generator) composeId(nameSpace *NameSpace, v int64) int64 {
 	id := nameSpace.timeStamp << (g.idcBits + g.workerIdBits + IncrIdBits)
-	id |= int64(g.idcId) << (g.workerIdBits + IncrIdBits)
+	if g.idcBits > 0 {
+		id |= int64(g.idcId) << (g.workerIdBits + IncrIdBits)
+	}
 	id |= int64(g.workerId.Load()) << IncrIdBits
 	id |= v
 	return id

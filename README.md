@@ -14,8 +14,10 @@ copy fibo程序和conf目录到您的目标目录下
 fibo是基于zookeeper来分配当前部署实例的worker id的。
 
 ## 配置
-打开conf/app.yaml 或者 app-*.yaml, 不同的配置文件代码不同的运行环境。比如 本机开发使用app.yaml, app-prod.yaml代表线上环境。fibo使用系统环境变量 FiboProfile 
-来确定环境， 比如 export FiboProfile=prod, 表示线上环境，如果没有指定FiboProfile环境变量，默认是app.yaml.
+打开conf/app.yaml 或者 app-*.yaml, 不同的配置文件代码不同的运行环境。比如 本机开发使用app.yaml, app-prod.yaml代表线上环境。
+
+* fibo使用系统环境变量 Fibo_Profile来确定环境， 比如 export Fibo_Profile=prod, 表示线上环境，如果没有指定FiboProfile环境变量，默认是app.yaml
+* 环境变量 IDC_ID 设置要部署的idc的 id，其范围是 0 ~ 1<<fibo.maxIdcBits - 1，如果不设置，默认是0，但系统会给出WARN 日志， 如果设置 fibo.maxIdcBits = 0. 可以不设置IDC_ID
 
 ### 配置具体的项
 

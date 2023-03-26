@@ -13,7 +13,7 @@ import (
 var appConf map[string]any
 
 func init() {
-	profile := os.Getenv("FiboProfile")
+	profile := os.Getenv("Fibo_Profile")
 	confFile := "./conf/app.yaml"
 	if profile != "" {
 		confFile = fmt.Sprintf("./conf/app-%s.yaml", profile)
@@ -31,6 +31,29 @@ func init() {
 		logger.GLogger.Infoln(err)
 		return
 	}
+}
+
+func getIdcId() int {
+	idcBits := getFiboConfigure().maxIdcBits
+	if idcBits == 0 {
+		return -1
+	}
+
+	idc := os.Getenv("IDC_ID")
+	if idc == "" {
+		logger.GLogger.Warnf("you can't setup IDC_ID env variable, use 0 idc id")
+		return 0
+	}
+	idcId, err := strconv.Atoi(idc)
+	if err != nil {
+		panic(err)
+	}
+
+	maxValue := 1 << idcBits
+	if idcId >= maxValue {
+		panic(fmt.Sprintf("Env variable IDC_ID exceed %d", maxValue))
+	}
+	return idcId
 }
 
 type AppInfo struct {
