@@ -1,4 +1,4 @@
-package fibo
+package core
 
 import (
 	"fmt"
@@ -85,7 +85,7 @@ func getZkConf() *zookeeperConf {
 }
 
 func getFiboConfigure() *configure {
-	v, ok := appConf["fibo"]
+	v, ok := appConf["core"]
 	if !ok {
 		return nil
 	}

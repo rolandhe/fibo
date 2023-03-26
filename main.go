@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/julienschmidt/httprouter"
-	"github.com/rolandhe/fibo/fibo"
+	"github.com/rolandhe/fibo/core"
 	"github.com/rolandhe/fibo/logger"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -13,8 +13,8 @@ import (
 )
 
 func main() {
-	g := fibo.NewGenerator()
-	err := fibo.InitWorkerId(g)
+	g := core.NewGenerator()
+	err := core.InitWorkerId(g)
 	if err != nil {
 		logger.GLogger.Infoln(err)
 		return
@@ -24,14 +24,14 @@ func main() {
 
 	router := httprouter.New()
 
-	router.GET("/fibo/one/*nameSpace", fibo.HttpService(g))
-	router.GET("/fibo/one", fibo.HttpService(g))
-	router.GET("/fibo/batch/*nameSpace", fibo.HttpBatchService(g))
-	router.GET("/fibo/batch", fibo.HttpBatchService(g))
-	router.GET("/fibo/heath", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	router.GET("/core/one/*nameSpace", core.HttpService(g))
+	router.GET("/core/one", core.HttpService(g))
+	router.GET("/core/batch/*nameSpace", core.HttpBatchService(g))
+	router.GET("/core/batch", core.HttpBatchService(g))
+	router.GET("/core/heath", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		writer.WriteHeader(200)
 	})
-	appInfo := fibo.GetAppInfo()
+	appInfo := core.GetAppInfo()
 	server := &http.Server{
 		Addr:        "0.0.0.0:" + strconv.Itoa(appInfo.Port),
 		Handler:     h2c.NewHandler(router, h2s),

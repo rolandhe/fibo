@@ -1,4 +1,4 @@
-package fibo
+package core
 
 import (
 	"errors"

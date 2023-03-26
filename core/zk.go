@@ -1,4 +1,4 @@
-package fibo
+package core
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var workerPath = "/fibo/workers"
+var workerPath = "/core/workers"
 var workerName = workerPath + "/worker"
 
 func reconnect(conf *zookeeperConf, g *Generator) {
@@ -64,17 +64,17 @@ func initWorkerCore(conf *zookeeperConf, g *Generator) error {
 
 func getWorkerId(conn *zk.Conn, conf *zookeeperConf) (int32, error) {
 	var err error
-	if err = ensureNode(conn, "/fibo"); err != nil {
+	if err = ensureNode(conn, "/core"); err != nil {
 		conn.Close()
 		return 0, err
 	}
 
-	if err = ensureNode(conn, "/fibo/workers"); err != nil {
+	if err = ensureNode(conn, "/core/workers"); err != nil {
 		conn.Close()
 		return 0, err
 	}
 
-	locker := zk.NewLock(conn, "/fibo/lock", zk.WorldACL(zk.PermAll))
+	locker := zk.NewLock(conn, "/core/lock", zk.WorldACL(zk.PermAll))
 	err = locker.Lock()
 	if err != nil {
 		logger.GLogger.Infoln(err)
