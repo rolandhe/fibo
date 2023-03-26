@@ -24,11 +24,11 @@ func main() {
 
 	router := httprouter.New()
 
-	router.GET("/core/one/*nameSpace", core.HttpService(g))
-	router.GET("/core/one", core.HttpService(g))
-	router.GET("/core/batch/*nameSpace", core.HttpBatchService(g))
-	router.GET("/core/batch", core.HttpBatchService(g))
-	router.GET("/core/heath", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	router.GET("/fibo/one/*nameSpace", core.HttpService(g))
+	router.GET("/fibo/one", core.HttpService(g))
+	router.GET("/fibo/batch/*nameSpace", core.HttpBatchService(g))
+	router.GET("/fibo/batch", core.HttpBatchService(g))
+	router.GET("/fibo/heath", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		writer.WriteHeader(200)
 	})
 	appInfo := core.GetAppInfo()

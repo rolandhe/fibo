@@ -13,7 +13,7 @@ import (
 var appConf map[string]any
 
 func init() {
-	profile := os.Getenv("profile")
+	profile := os.Getenv("FiboProfile")
 	confFile := "./conf/app.yaml"
 	if profile != "" {
 		confFile = fmt.Sprintf("./conf/app-%s.yaml", profile)
@@ -85,7 +85,7 @@ func getZkConf() *zookeeperConf {
 }
 
 func getFiboConfigure() *configure {
-	v, ok := appConf["core"]
+	v, ok := appConf["fibo"]
 	if !ok {
 		return nil
 	}

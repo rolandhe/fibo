@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -46,7 +47,10 @@ func HttpService(gen *Generator) func(writer http.ResponseWriter, request *http.
 		ns := params.ByName("nameSpace")
 		if ns == "" || ns == "/" {
 			ns = DefaultNamespace
+		} else if strings.HasPrefix(ns, "/") {
+			ns = ns[1:]
 		}
+
 		var ret ResultOne
 		id, err := gen.GenOneId(ns)
 		if err != nil {
@@ -76,6 +80,8 @@ func HttpBatchService(gen *Generator) func(writer http.ResponseWriter, request *
 		ns := params.ByName("nameSpace")
 		if ns == "" || ns == "/" {
 			ns = DefaultNamespace
+		} else if strings.HasPrefix(ns, "/") {
+			ns = ns[1:]
 		}
 		queryValues := request.URL.Query()
 		batchVale := queryValues["batch"]
